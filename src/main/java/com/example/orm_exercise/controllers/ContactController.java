@@ -1,5 +1,6 @@
 package com.example.orm_exercise.controllers;
 
+import com.example.orm_exercise.models.Address;
 import com.example.orm_exercise.models.Contact;
 import com.example.orm_exercise.repositories.ContactRepository;
 import org.springframework.web.bind.annotation.*;
@@ -27,6 +28,9 @@ public class ContactController {
 
     @PostMapping
     public Contact createContact(@RequestBody Contact contact) {
+        for (Address address : contact.getAddresses()) {
+            address.setContact(contact);
+        }
         return contactRepository.save(contact);
     }
 
@@ -43,5 +47,22 @@ public class ContactController {
     @DeleteMapping("/{id}")
     public void deleteContact(@PathVariable int id) {
         contactRepository.deleteById(id);
+    }
+
+    @PostMapping("/{id}/addresses")
+    public Contact addNewAddress(@PathVariable int id, @RequestBody Address address) {
+        return contactRepository.findById(id).map(contact -> {
+            address.setContact(contact);
+            contact.getAddresses().add(address);
+            return contactRepository.save(contact);
+        }).orElse(null);
+    }
+
+    @DeleteMapping("{id}/addresses/{addressId}")
+    public Contact deleteAddress(@PathVariable int id, @PathVariable int addressId) {
+        return contactRepository.findById(id).map(contact -> {
+            contact.getAddresses().removeIf(address -> address.getId() == addressId);
+            return contactRepository.save(contact);
+        }).orElse(null);
     }
 }
